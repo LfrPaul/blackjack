@@ -19,11 +19,9 @@
 
 key_t cle, keyConnexion;
 int balConnexionID;
-int ret;
-int descripteur;
 struct msqid_ds buf;
 
-char test[100];
+sem_t *semInit;
 
 struct newPlayer my_infos;
 
@@ -34,73 +32,44 @@ int main(int argc, char* argv[]) {
 
     // création de la file de messages (ou ouverture si déjà existante), et récupération de son ID dans balConnexionID
     balConnexionID = msgget(keyConnexion, 0666); 
+    // Ouverture du sémaphore
+    semInit = sem_open("/INITPARTIE.SEMAPHORE", O_RDONLY, 0600, 0);
 
     printf("Client\n");
-
-    // ret = mkfifo("pipeConnexion", 0666);
-    // descripteur = open("tube", O_RDONLY);
 
     monPid = getpid();
 
     my_infos.mtype = 1;
-    my_infos.pid = monPid;
+    my_infos.joueur.pid = monPid;
+    my_infos.joueur.solde = 1000;
+    my_infos.joueur.mise = 1001;
 
     printf("Saisissez votre pseudo :");
-    scanf("%[^\n]s", my_infos.name);
-
-    printf("Client:  Pid:%d, Nom:%s", my_infos.pid, my_infos.name);
+    scanf("%[^\n]s", my_infos.joueur.pseudo);
 
     getchar();
+
+    printf("Client:  Pid:%d, Nom:%s\n", my_infos.joueur.pid, my_infos.joueur.pseudo);
     // On envoie le message au serveur
-    msgsnd(balConnexionID, &my_infos, sizeof(my_infos.name) + sizeof(pid_t), 0);
+    msgsnd(balConnexionID, &my_infos, sizeof(my_infos.joueur), 0);
 
-    // création de la file de messages (ou ouverture si déjà existante), et récupération de son ID dans msqid
-    // msqid = msgget(cle, IPC_CREAT | 0666); 
+    // On attend que le serveur nous envoie un message pour dire que la partie est prête
+    sem_wait(semInit);
 
-    // if(msqid == -1) {
-    //     perror("Erreur msgget");
-    //     exit(-1);
-    // }
+    printf("Mise\n");
 
-    // printf("Je suis le serveur\n");
+    while(my_infos.joueur.mise > my_infos.joueur.solde) {
+        printf("Saisissez votre mise :");
+        scanf("%d", &my_infos.joueur.mise);
+        getchar();
+        printf("Mise: %d\n", my_infos.joueur.mise);
 
-    // listeJoueurs[0].pid = getpid();
-    // strcpy(listeJoueurs[0].pseudo, "Paul");
-    // listeJoueurs[0].score = 50;
-
-    // msgp.mtype = 1;
-    // msgp.mtext[0].numero = 1;
-    // msgp.mtext[0].couleur = 'A';
-
-    // msgp.mtext[0].possesseur = listeJoueurs[0];
-
-    // // envoi de 10 messages dans la file
-    // ret = msgsnd(msqid, &msgp, sizeof(msgp.mtext), 0);
-
-    // sleep(4);
+        my_infos.mtype = 2;
+    }
+    
+    msgsnd(balConnexionID, &my_infos, sizeof(my_infos.joueur), 0);
+    
+    printf("Joueur %d : %s, mise : %d, solde : %d\n", my_infos.joueur.pid, my_infos.joueur.pseudo, my_infos.joueur.mise, my_infos.joueur.solde);
     
     return 0;
 }
-
-// void printInfoBoites() {
-//     // récupération des informations de la file dans la variable buf;
-//     ret = msgctl(msqid, IPC_STAT, &buf);
-
-//     if(ret == -1) {
-//         printf("Erreur msgctl\n");
-//         exit(-1);
-//     } else {
-//         printf("UID de l'owner : %d\n", (&buf)->msg_perm.uid);
-//         printf("GID de l'owner : %d\n", (&buf)->msg_perm.gid);
-//         printf("UID du créateur : %d\n", (&buf)->msg_perm.cuid);
-//         printf("GID du créateur : %d\n", (&buf)->msg_perm.cgid);
-//         printf("Date du dernier msgsnd : %ld\n", (&buf)->msg_stime);
-//         printf("Date du dernier msgrcv : %ld\n", (&buf)->msg_rtime);
-//         printf("Date de création: %ld\n", (&buf)->msg_ctime);
-//         printf("Nombre actuel d'octets dans la file: %ld\n", (&buf)->__msg_cbytes);
-//         printf("Nombre de messages dans la file: %ld\n", (&buf)->msg_qnum);
-//         printf("Nombre max d'octets autorisés dans la file: %ld\n", (&buf)->msg_qbytes);
-//         printf("PID du dernier msgsnd : %d\n", (&buf)->msg_lspid);
-//         printf("PID du dernier msgcrv : %d\n", (&buf)->msg_lrpid);
-//     }
-// }

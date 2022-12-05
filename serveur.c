@@ -15,19 +15,20 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/shm.h>    
 #include "boiteauxlettres.h"
 
 key_t cle, keyConnexion;
-int balConnexionID;
-int ret;
+int balConnexionID; // ID de la file de messages
+int memConnexionID; // ID de la mémoire partagée
 int descripteur;
 struct msqid_ds buf;
 
+sem_t *semInit;
+
 char input[100];
 
-struct msgbuf msgp;
-
-struct joueur listeJoueurs[10];
+struct listeJoueurs *listeJoueurs;
 int nbJoueurs = 0;
 
 struct newPlayer new_player;
@@ -35,94 +36,80 @@ struct newPlayer new_player;
 int main(int argc, char* argv[]) {
     keyConnexion = ftok("balConnexion", 10); // création de la clé
 
-    printf("key:%d\n", keyConnexion);
-
     // création de la file de messages (ou ouverture si déjà existante), et récupération de son ID dans balConnexionID
     balConnexionID = msgget(keyConnexion, IPC_CREAT | 0666); 
+    // création de la mémoire partagée (ou ouverture si déjà existante), et récupération de son ID dans memConnexionID
+    memConnexionID = shmget(cle, 12*sizeof(struct joueur), IPC_EXCL | IPC_CREAT | 0666);
+    // Initialisation du sémaphore
+    semInit = sem_open("/INITPARTIE.SEMAPHORE", O_CREAT | O_RDWR, 0600, 0);
 
     printf("Je suis le serveur\nCréation de la partie...\n");
+    
+    listeJoueurs = (struct listeJoueurs *) shmat(memConnexionID,NULL,0);
 
-    while(nbJoueurs != 2) {
+    while(listeJoueurs->nbJoueurs != MIN_JOUEURS) {
         // attente de reception d'un message d'un client
-        msgrcv(balConnexionID, &new_player, sizeof(new_player.name) + sizeof(pid_t), 1, 0);
+        msgrcv(balConnexionID, &new_player, sizeof(new_player.joueur), 1, 0);
 
-        listeJoueurs[nbJoueurs].pid = new_player.pid;
-        strcpy(listeJoueurs[nbJoueurs].pseudo, new_player.name);
+        listeJoueurs->joueurs[listeJoueurs->nbJoueurs] = new_player.joueur;
         
-        printf("Message reçu de %d : >%s<\n", new_player.pid, new_player.name);
-        nbJoueurs++;
+        printf("Message reçu de %d : >%s<\n", new_player.joueur.pid, new_player.joueur.pseudo);
+        listeJoueurs->nbJoueurs++;
     }
 
-    int fils = fork();
+    int fils = fork(); // création d'un processus fils
 
     if(fils == 0) {// fils
-        while(nbJoueurs != 12) {
-            msgrcv(balConnexionID, &new_player, sizeof(new_player.name) + sizeof(pid_t), 1, 0);
+        while(listeJoueurs->nbJoueurs != MAX_JOUEURS) {
+            msgrcv(balConnexionID, &new_player, sizeof(new_player.joueur), 1, 0);
 
-            listeJoueurs[nbJoueurs].pid = new_player.pid;
-            strcpy(listeJoueurs[nbJoueurs].pseudo, new_player.name);
+            listeJoueurs->joueurs[listeJoueurs->nbJoueurs] = new_player.joueur;
 
-            printf("Message reçu de %d : >%s<\n", new_player.pid, new_player.name);
-            nbJoueurs++;
+            printf("Message reçu de %d : >%s<\n", new_player.joueur.pid, new_player.joueur.pseudo);
+            listeJoueurs->nbJoueurs++;
         }
         printf("Fin fils : %d\n", nbJoueurs);
         _exit(0);
     } else {// père
-        while(strcmp(input, "GO") != 0) {
+        while(strcmp(input, "GO") != 0) { // On attend que le serveur tape GO pour lancer la partie
             printf("Saisissez GO pour lancer la partie :");
             scanf("%[^\n]s", input);
             getchar();
         }
         kill(fils, SIGKILL); // on tue le fils
+
+        printf("nbJouer: %d\n", listeJoueurs->nbJoueurs);
+
+        for(int i = 0; i < listeJoueurs->nbJoueurs; i++) {
+            // On libère un jeton de sémaphore pour débloquer chaque joueur (indiquer que la partie commence)
+            sem_post(semInit);
+            printf("Joueur %d : %s\n", listeJoueurs->joueurs[i].pid, listeJoueurs->joueurs[i].pseudo);
+        }
     }
 
-    // création de la file de messages (ou ouverture si déjà existante), et récupération de son ID dans msqid
-    // msqid = msgget(cle, IPC_CREAT | 0666); 
+    printf("Attente mise\n");
+    for(int i = 0; i < listeJoueurs->nbJoueurs; i++) {
+        // Attente de la mise de chaque joueur
+        msgrcv(balConnexionID, &new_player, sizeof(new_player.joueur), 2, 0);
 
-    // if(msqid == -1) {
-    //     perror("Erreur msgget");
-    //     exit(-1);
-    // }
+        printf("Mise reçue de %d : %d\n", new_player.joueur.pid, new_player.joueur.mise);
 
-    // printf("Je suis le serveur\n");
+        int index = findPlayerIndex(new_player.joueur.pid); // On récupère l'index du joueur dans la liste des joueurs
 
-    // listeJoueurs[0].pid = getpid();
-    // strcpy(listeJoueurs[0].pseudo, "Paul");
-    // listeJoueurs[0].score = 50;
+        if(index != -1) {
+            listeJoueurs->joueurs[index].mise = new_player.joueur.mise; // on met à jour sa mise
+        }
+    }
 
-    // msgp.mtype = 1;
-    // msgp.mtext[0].numero = 1;
-    // msgp.mtext[0].couleur = 'A';
 
-    // msgp.mtext[0].possesseur = listeJoueurs[0];
-
-    // // envoi de 10 messages dans la file
-    // ret = msgsnd(msqid, &msgp, sizeof(msgp.mtext), 0);
-
-    // sleep(4);
-    
     return 0;
 }
 
-// void printInfoBoites() {
-//     // récupération des informations de la file dans la variable buf;
-//     ret = msgctl(msqid, IPC_STAT, &buf);
-
-//     if(ret == -1) {
-//         printf("Erreur msgctl\n");
-//         exit(-1);
-//     } else {
-//         printf("UID de l'owner : %d\n", (&buf)->msg_perm.uid);
-//         printf("GID de l'owner : %d\n", (&buf)->msg_perm.gid);
-//         printf("UID du créateur : %d\n", (&buf)->msg_perm.cuid);
-//         printf("GID du créateur : %d\n", (&buf)->msg_perm.cgid);
-//         printf("Date du dernier msgsnd : %ld\n", (&buf)->msg_stime);
-//         printf("Date du dernier msgrcv : %ld\n", (&buf)->msg_rtime);
-//         printf("Date de création: %ld\n", (&buf)->msg_ctime);
-//         printf("Nombre actuel d'octets dans la file: %ld\n", (&buf)->__msg_cbytes);
-//         printf("Nombre de messages dans la file: %ld\n", (&buf)->msg_qnum);
-//         printf("Nombre max d'octets autorisés dans la file: %ld\n", (&buf)->msg_qbytes);
-//         printf("PID du dernier msgsnd : %d\n", (&buf)->msg_lspid);
-//         printf("PID du dernier msgcrv : %d\n", (&buf)->msg_lrpid);
-//     }
-// }
+int findPlayerIndex(pid_t pid) {
+    for(int i = 0; i < listeJoueurs->nbJoueurs; i++) {
+        if(listeJoueurs->joueurs[i].pid == pid) {
+            return i;
+        }
+    }
+    return -1;
+}

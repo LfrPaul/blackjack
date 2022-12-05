@@ -1,26 +1,24 @@
 #include <sys/types.h>
 
-struct joueur {
+#define MIN_JOUEURS 2
+#define MAX_JOUEURS 12
+
+struct joueur { // structure d'un joueur
     pid_t pid;
     char pseudo[100];
-    int score;
+    int solde;
+    int mise;
 };
 
-struct carte {
-    int numero;
-    char couleur;
-    struct joueur possesseur;
-};
-
-struct msgbuf {
-    long mtype;
-    struct carte mtext[52];
+struct listeJoueurs { // structure de la liste des joueurs
+    int nbJoueurs;
+    struct joueur joueurs[12];
 };
 
 struct newPlayer {
     long mtype;
-    char name[100];
-    pid_t pid;
+    struct joueur joueur;
 };
 
 void printInfoBoites();
+int findPlayerIndex(pid_t pid);

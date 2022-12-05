@@ -6,7 +6,7 @@ bal3_c: bal3_c.c
 bal3_s: bal3_s.c
 	gcc bal3_s.c -o bal3_s
 
-serveur: serveur.c
+serveur: serveur.c client.c
 	gcc serveur.c -o serveur
 	gcc client.c -o client
 
