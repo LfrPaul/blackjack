@@ -4,18 +4,7 @@
 /* Fichier bal3_s                                                              */
 /* ========================================================================== */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <semaphore.h>
-#include <pthread.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include "boiteauxlettres.h"
+#include "../include/joueur.h"
 
 key_t cle, keyConnexion;
 int balConnexionID;
@@ -23,12 +12,12 @@ struct msqid_ds buf;
 
 sem_t *semInit;
 
-struct newPlayer my_infos;
+newPlayer_t my_infos;
 
 pid_t monPid;
 
 int main(int argc, char* argv[]) {
-    keyConnexion = ftok("balConnexion", 10); // création de la clé
+    keyConnexion = ftok("token/balConnexion", 19); // création de la clé
 
     // création de la file de messages (ou ouverture si déjà existante), et récupération de son ID dans balConnexionID
     balConnexionID = msgget(keyConnexion, 0666); 
@@ -43,6 +32,7 @@ int main(int argc, char* argv[]) {
     my_infos.joueur.pid = monPid;
     my_infos.joueur.solde = 1000;
     my_infos.joueur.mise = 1001;
+    my_infos.joueur.nbCartes = 0;
 
     printf("Saisissez votre pseudo :");
     scanf("%[^\n]s", my_infos.joueur.pseudo);
