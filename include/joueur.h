@@ -42,6 +42,16 @@ struct newPlayer{
 typedef struct newPlayer newPlayer_t;
 
 
+struct croupier{ // structure du croupier
+    pid_t pid;
+    carte_t main[5];
+    int nbCartes;
+};
+typedef struct croupier croupier_t;
+
+
 int findPlayerIndex(pid_t pid, listeJoueurs_t* listeJ);
 int uneCartePourTousJoueurs(paquetCarte_t* pCartes, listeJoueurs_t* pJoueurs);
-void afficherMain(joueur_t *joueur);
+void afficherMainJoueur(joueur_t *joueur);
+void afficherMainCroupier(croupier_t *croupier);
+void uneCartePourUnePersonnne(paquetCarte_t* pCartes, carte_t * main, int* nbCartes);
