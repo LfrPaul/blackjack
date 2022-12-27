@@ -65,11 +65,24 @@ int uneCartePourTousJoueurs(paquetCarte_t* pCartes, listeJoueurs_t* pJoueurs){
 }
 
 void afficherMainJoueur(joueur_t *joueur){
-    if(joueur->nbCartes < 5){
+    printf("JOUEUR %s (%d)\n", joueur->pseudo, joueur->pid);
+    if(joueur->nbCartes < NB_CARTE_EN__MAIN){
         for(int i = 0; i < joueur->nbCartes; i++){
-            printf("**********\n");
-            printf("Carte n°%d -> valeur %d -> couleur %s \n", i, joueur->main[i].valeur, joueur->main[i].couleur);
-            printf("**********\n");
+            printf("\n\n*** Carte n°%d ***\n", i);
+
+            if(joueur->main[i].valeur == 1)
+                printf("*\tA\t*\n");
+            else if(joueur->main[i].valeur == 11)
+                printf("*\tJ\t*\n");
+            else if(joueur->main[i].valeur == 12)
+                printf("*\tD\t*\n");
+            else if(joueur->main[i].valeur == 13)
+                printf("*\tR\t*\n");
+            else
+                printf("*\t%d\t*\n", joueur->main[i].valeur);
+
+            printf("*\t%s\t*\n", joueur->main[i].couleur);
+            printf("*****************\n");
         }
     }
     else {
@@ -78,11 +91,32 @@ void afficherMainJoueur(joueur_t *joueur){
 }
 
 void afficherMainCroupier(croupier_t *croupier){
-    if(croupier->nbCartes < 5){
+    printf("CROUPIER (%d)\n", croupier->pid);
+    if(croupier->nbCartes < NB_CARTE_EN__MAIN){
         for(int i = 0; i < croupier->nbCartes; i++){
-            printf("**********\n");
-            printf("Carte n°%d \n valeur %d \n couleur %s \n", i, croupier->main[i].valeur, croupier->main[i].couleur);
-            printf("**********\n");
+            if(i == 0 && croupier->debutPartie == 1){
+                printf("\n\n*** Carte n°%d ***\n", i);
+                printf("* Carte cachée   *\n");
+                printf("*****************\n");
+            } 
+            else {
+                printf("\n\n*** Carte n°%d ***\n", i);
+
+                if(croupier->main[i].valeur == 1)
+                    printf("*\tA\t*\n");
+                else if(croupier->main[i].valeur == 11)
+                    printf("*\tJ\t*\n");
+                else if(croupier->main[i].valeur == 12)
+                    printf("*\tD\t*\n");
+                else if(croupier->main[i].valeur == 13)
+                    printf("*\tR\t*\n");
+                else
+                    printf("*\t%d\t*\n", croupier->main[i].valeur);
+                //printf("*\t%d\t*\n", croupier->main[i].valeur);
+
+                printf("*\t%s\t*\n", croupier->main[i].couleur);
+                printf("*****************\n");
+            }
         }
     }
     else {

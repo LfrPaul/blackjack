@@ -27,7 +27,8 @@ int initPaquetCartes(paquetCarte_t* pCartes) {
     for(int i = 0; i<52; i++){
         carte_t uneCarte;
         strcpy(uneCarte.couleur, couleur[(int)ceilf(i/13)]);
-        uneCarte.valeur = (i % 13 < 10) ? (i % 13 + 1): 10;
+        //uneCarte.valeur = (i % 13 < 10) ? (i % 13 + 1): 10;
+        uneCarte.valeur = i % 13 + 1;
         uneCarte.dansPioche = 1;
         memcpy(&(pCartes->tabCartes[i]), &uneCarte, sizeof(carte_t));
     }

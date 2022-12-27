@@ -15,14 +15,16 @@
 #define MAX_JOUEURS 12
 #define CODE_BAL_JOUEUR 1
 #define CODE_BAL_MISE 2
+#define NB_CARTE_EN__MAIN 11
 
 struct joueur { // structure d'un joueur
     pid_t pid;
     char pseudo[100];
     int solde;
     int mise;
-    carte_t main[5];
+    carte_t main[NB_CARTE_EN__MAIN];
     int nbCartes;
+    int sommeCartes;
 };
 typedef struct joueur joueur_t;
 
@@ -44,10 +46,20 @@ typedef struct newPlayer newPlayer_t;
 
 struct croupier{ // structure du croupier
     pid_t pid;
-    carte_t main[5];
+    carte_t main[NB_CARTE_EN__MAIN];
     int nbCartes;
+    int sommeCartesCroupier;
+    int debutPartie;
 };
 typedef struct croupier croupier_t;
+
+
+struct resultatTour{
+    long mtype;
+    int gain;
+    int gagne;
+};
+typedef struct resultatTour resultatTour_t;
 
 
 int findPlayerIndex(pid_t pid, listeJoueurs_t* listeJ);
