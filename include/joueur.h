@@ -62,6 +62,14 @@ struct resultatTour{
 typedef struct resultatTour resultatTour_t;
 
 
+struct rejoueTour{
+    long mtype;
+    pid_t pidJoueur;
+    int rejoue; // 1 si le joueur rejoue ou 0 si le joueur quitte la partie
+};
+typedef struct rejoueTour rejoueTour_t;
+
+
 int findPlayerIndex(pid_t pid, listeJoueurs_t* listeJ);
 int uneCartePourTousJoueurs(paquetCarte_t* pCartes, listeJoueurs_t* pJoueurs);
 void afficherMainJoueur(joueur_t *joueur);
