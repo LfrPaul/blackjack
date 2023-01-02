@@ -191,9 +191,7 @@ int main(int argc, char* argv[]) {
         do{
             score = 0;
             char choix[1];
-            for(int i = 0; i<listeJoueurs->joueurs[indexJoueur].nbCartes; i++){
-                score = score + listeJoueurs->joueurs[indexJoueur].main[i].valeur;
-            }
+            score = getPlayerScore(listeJoueurs->joueurs[indexJoueur].main, listeJoueurs->joueurs[indexJoueur].nbCartes);
             printf("Votre score de cartes est de : %d\n", score);
 
             if(score > 21){
@@ -230,6 +228,13 @@ int main(int argc, char* argv[]) {
         msgrcv(balTourID, &recoitResultats, sizeof(resultatTour_t), getpid(), 0);
         if(recoitResultats.gagne == 1){
             printf("J'ai gagné !!!!!!!!!!! et mon PID = %d\n", getpid());
+            printf("J'ai récu un gain de : %d \n", recoitResultats.gain);
+            printf("Ancien solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
+            listeJoueurs->joueurs[indexJoueur].solde = listeJoueurs->joueurs[indexJoueur].solde + recoitResultats.gain;
+            printf("Mon nouveau solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
+        }
+        if(recoitResultats.gagne == 2){
+            printf("J'ai fait égalité ! et mon PID = %d\n", getpid());
             printf("J'ai récu un gain de : %d \n", recoitResultats.gain);
             printf("Ancien solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
             listeJoueurs->joueurs[indexJoueur].solde = listeJoueurs->joueurs[indexJoueur].solde + recoitResultats.gain;

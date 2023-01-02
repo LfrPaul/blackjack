@@ -209,9 +209,7 @@ int main(int argc, char* argv[]) {
         uneCartePourUnePersonnne(paquetCartes, croupierJeu->main, &(croupierJeu->nbCartes));
 
         int scoreCroupier = 0;
-        for(int i = 0; i<croupierJeu->nbCartes; i++){
-            scoreCroupier = scoreCroupier + croupierJeu->main[i].valeur;
-        }
+        scoreCroupier = getPlayerScore(croupierJeu->main, croupierJeu->nbCartes);
         croupierJeu->sommeCartesCroupier = scoreCroupier;
         afficherMainCroupier(croupierJeu);
 
@@ -248,12 +246,13 @@ int main(int argc, char* argv[]) {
             uneCartePourUnePersonnne(paquetCartes, croupierJeu->main, &(croupierJeu->nbCartes));
             afficherMainCroupier(croupierJeu);
             for(int i = 0; i<croupierJeu->nbCartes; i++){
-                nouvScoreCroupier = nouvScoreCroupier + croupierJeu->main[i].valeur;
+                nouvScoreCroupier = nouvScoreCroupier + ((croupierJeu->main[i].valeur < 10)?croupierJeu->main[i].valeur:10);
             }
             croupierJeu->sommeCartesCroupier = nouvScoreCroupier;
             printf("Le nouveau score du croupier vaut %d\n", croupierJeu->sommeCartesCroupier);
         }
 
+        afficherMainCroupier(croupierJeu);
 
         printf("\n\n******** RESULTAT ********\n");
         // on détermine les joueurs qui ont gagné 
@@ -269,11 +268,22 @@ int main(int argc, char* argv[]) {
             }
             else if(croupierJeu->sommeCartesCroupier <= 21 &&
                     listeJoueurs->joueurs[i].sommeCartes <= 21 &&
-                    listeJoueurs->joueurs[i].sommeCartes >= croupierJeu->sommeCartesCroupier){
+                    listeJoueurs->joueurs[i].sommeCartes > croupierJeu->sommeCartesCroupier){
                 printf("Le joueur %d => %s a gagné \n", i, listeJoueurs->joueurs[i].pseudo);
                 envoieResultats.mtype = listeJoueurs->joueurs[i].pid;
                 envoieResultats.gagne = 1;
                 envoieResultats.gain = listeJoueurs->joueurs[i].mise * 2;
+                printf("On envoie le resultat, gagne = %d, gain = %d, PID = %ld\n", envoieResultats.gagne,
+                            envoieResultats.gain, envoieResultats.mtype);
+                msgsnd(balTourID, &envoieResultats, sizeof(resultatTour_t), 0);
+            }
+            else if(croupierJeu->sommeCartesCroupier <= 21 &&
+                    listeJoueurs->joueurs[i].sommeCartes <= 21 &&
+                    listeJoueurs->joueurs[i].sommeCartes == croupierJeu->sommeCartesCroupier){
+                printf("Le joueur %d => %s a fait égalité \n", i, listeJoueurs->joueurs[i].pseudo);
+                envoieResultats.mtype = listeJoueurs->joueurs[i].pid;
+                envoieResultats.gagne = 2;
+                envoieResultats.gain = listeJoueurs->joueurs[i].mise;
                 printf("On envoie le resultat, gagne = %d, gain = %d, PID = %ld\n", envoieResultats.gagne,
                             envoieResultats.gain, envoieResultats.mtype);
                 msgsnd(balTourID, &envoieResultats, sizeof(resultatTour_t), 0);

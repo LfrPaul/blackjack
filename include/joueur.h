@@ -75,3 +75,4 @@ int uneCartePourTousJoueurs(paquetCarte_t* pCartes, listeJoueurs_t* pJoueurs);
 void afficherMainJoueur(joueur_t *joueur);
 void afficherMainCroupier(croupier_t *croupier);
 void uneCartePourUnePersonnne(paquetCarte_t* pCartes, carte_t * main, int* nbCartes);
+int getPlayerScore(carte_t main[NB_CARTE_EN__MAIN], int nbCartes);

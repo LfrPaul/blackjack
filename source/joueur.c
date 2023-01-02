@@ -162,3 +162,24 @@ void uneCartePourUnePersonnne(paquetCarte_t* pCartes, carte_t * main, int* nbCar
 
     //printf("nbCartes = %d\n" , *nbCartes);
 }
+
+int getPlayerScore(carte_t main[NB_CARTE_EN__MAIN], int nbCartes) {
+    int score = 0, as = 0;
+    for(int i = 0; i < nbCartes; i++){
+        if(main[i].valeur != 1) {
+            score = score + ((main[i].valeur < 10)?main[i].valeur:10);
+        } else {
+            as++;
+        }
+    }
+
+    for(int i = 0; i < as; i++) {
+        if(score + 11 > 21) {
+            score++;
+        } else {
+            score = score + 11;
+        }
+    }
+
+    return score;
+}
