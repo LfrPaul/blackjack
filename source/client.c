@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
     balRejoueID = msgget(cleBalRejoue, 0666); 
 
     // création de la file de messages (ou ouverture si déjà existante), et récupération de son ID dans balTourID
-    balTourID = msgget(cleBalTour, IPC_CREAT | 0666); 
+    balTourID = msgget(cleBalTour, IPC_EXCL | 0666); 
 
     // Récupération de la mémoire partagée de la liste de joueurs (ou ouverture si déjà existante),
     // et récupération de son ID dans memConnexionID
@@ -150,13 +150,18 @@ int main(int argc, char* argv[]) {
 
         printf("Affichage de ma main\n");
         sem_wait(semMain);
-        for(int i = 0; i<listeJoueurs->nbJoueurs; i++){
-            if(listeJoueurs->joueurs[i].pid == monPid){
-                printf("Je suis ce joueur dans la liste et PID = %d\n", listeJoueurs->joueurs[i].pid);
-                indexJoueur = i;
-                afficherMainJoueur(&(listeJoueurs->joueurs[i]));
-            }
-        }
+
+        indexJoueur = findPlayerIndex(monPid, listeJoueurs);
+        printf("mon index: %d\n", indexJoueur);
+        afficherMainJoueur(&(listeJoueurs->joueurs[indexJoueur]));
+        
+        // for(int i = 0; i<listeJoueurs->nbJoueurs; i++){
+        //     if(listeJoueurs->joueurs[i].pid == monPid){
+        //         printf("Je suis ce joueur dans la liste et PID = %d\n", listeJoueurs->joueurs[i].pid);
+        //         // indexJoueur = i;
+        //         afficherMainJoueur(&(listeJoueurs->joueurs[i]));
+        //     }
+        // }
         printf("Fin de l'affichage de la main\n");
 
         printf("Joueur nouveau %d : %s, mise : %d, solde : %d\n", listeJoueurs->joueurs[indexJoueur].pid, listeJoueurs->joueurs[indexJoueur].pseudo, listeJoueurs->joueurs[indexJoueur].mise, listeJoueurs->joueurs[indexJoueur].solde);
