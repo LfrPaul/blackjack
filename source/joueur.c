@@ -65,10 +65,9 @@ int uneCartePourTousJoueurs(paquetCarte_t* pCartes, listeJoueurs_t* pJoueurs){
 }
 
 void afficherMainJoueur(joueur_t *joueur){
-    printf("JOUEUR %s (%d)\n", joueur->pseudo, joueur->pid);
+    // printf("JOUEUR %s (%d)\n", joueur->pseudo, joueur->pid);
     if(joueur->nbCartes < NB_CARTE_EN__MAIN){
 
-        printf("\n\n");
         for(int i = 0; i < joueur->nbCartes; i++){
             printf("*** Carte n°%d ***  ", i);
         }
@@ -104,32 +103,37 @@ void afficherMainJoueur(joueur_t *joueur){
 }
 
 void afficherMainCroupier(croupier_t *croupier){
-    printf("CROUPIER (%d)\n", croupier->pid);
+    // printf("CROUPIER (%d)\n", croupier->pid);
     if(croupier->nbCartes < NB_CARTE_EN__MAIN){
-
-        printf("\n\n");
         for(int i = 0; i < croupier->nbCartes; i++){
             printf("*** Carte n°%d ***  ", i);
         }
         printf("\n");
         for(int i = 0; i < croupier->nbCartes; i++){
-            if(croupier->main[i].valeur == 1)
-                printf("*%*sA%*s*", 7, " ", 7, " ");
-            else if(croupier->main[i].valeur == 11)
-                printf("*%*sJ%*s*", 7, " ", 7, " ");
-            else if(croupier->main[i].valeur == 12)
-                printf("*%*sD%*s*", 7, " ", 7, " ");
-            else if(croupier->main[i].valeur == 13)
-                printf("*%*sR%*s*", 7, " ", 7, " ");
-            else
-                printf("*%*d%*s*", 8, croupier->main[i].valeur, 7, " ");
+            if(i == 0 && croupier->debutPartie == 1){
+                printf("* Carte cachée  *  ");
+            } else {
+                if(croupier->main[i].valeur == 1)
+                    printf("*%*sA%*s*", 7, " ", 7, " ");
+                else if(croupier->main[i].valeur == 11)
+                    printf("*%*sJ%*s*", 7, " ", 7, " ");
+                else if(croupier->main[i].valeur == 12)
+                    printf("*%*sD%*s*", 7, " ", 7, " ");
+                else if(croupier->main[i].valeur == 13)
+                    printf("*%*sR%*s*", 7, " ", 7, " ");
+                else
+                    printf("*%*d%*s*", 8, croupier->main[i].valeur, 7, " ");
             
-            printf("  ");
+                printf("  ");
+            }
         }
         printf("\n");
         for(int i = 0; i < croupier->nbCartes; i++){
-            // printf("*%*d%*s*", 8 + strlen(), joueur->main[i].valeur, 7, " ");
-            printf("*%*s%*s*  ", (int)(8 + strlen(croupier->main[i].couleur)/2), croupier->main[i].couleur, (int)(7 - strlen(croupier->main[i].couleur)/2), " ");
+            if(i == 0 && croupier->debutPartie == 1){
+                printf("*               *  ");
+            } else {
+                printf("*%*s%*s*  ", (int)(8 + strlen(croupier->main[i].couleur)/2), croupier->main[i].couleur, (int)(7 - strlen(croupier->main[i].couleur)/2), " ");
+            }
         }
         printf("\n");
         for(int i = 0; i < croupier->nbCartes; i++){
@@ -140,6 +144,32 @@ void afficherMainCroupier(croupier_t *croupier){
     else {
         printf("?\n");
     }
+}
+
+void printTable(croupier_t *croupier, listeJoueurs_t* listeJoueurs, int indexJoueur) {
+    system("clear");
+
+
+    for(int i = 0; i < listeJoueurs->nbJoueurs; i++) {
+        if(i != indexJoueur) {
+            printf("\nMain du joueur %s : \n", listeJoueurs->joueurs[i].pseudo);
+            afficherMainJoueur(&(listeJoueurs->joueurs[i]));
+            printf("Score : %d\n", getPlayerScore(listeJoueurs->joueurs[i].main, listeJoueurs->joueurs[i].nbCartes));
+        }
+    }
+
+    printf("--------------------------------------------------------------\n");
+
+    printf("\nMain du croupier : \n");
+    afficherMainCroupier(croupier);
+
+    printf("\nVotre main : \n");
+    afficherMainJoueur(&(listeJoueurs->joueurs[indexJoueur]));
+
+    printf("Votre score : %d\n", getPlayerScore(listeJoueurs->joueurs[indexJoueur].main, listeJoueurs->joueurs[indexJoueur].nbCartes));
+
+    printf("\nVOTRE MISE : %d\n\n", (listeJoueurs->joueurs[indexJoueur]).mise);
+    
 }
 
 

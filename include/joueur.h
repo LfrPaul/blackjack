@@ -76,3 +76,5 @@ void afficherMainJoueur(joueur_t *joueur);
 void afficherMainCroupier(croupier_t *croupier);
 void uneCartePourUnePersonnne(paquetCarte_t* pCartes, carte_t * main, int* nbCartes);
 int getPlayerScore(carte_t main[NB_CARTE_EN__MAIN], int nbCartes);
+void printTable(croupier_t *croupier, listeJoueurs_t* pJoueurs, int indexJoueur);
+void fonctionAffichage();

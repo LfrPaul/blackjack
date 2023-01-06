@@ -27,6 +27,10 @@ sem_t *semAffiche;
 sem_t *semFinTour;
 sem_t *semFinRejoue;
 
+// sémaphores utilisés dans le thread d'affichage
+sem_t *semAffichageMain;
+sem_t *semAffichageMainTerm;
+
 char input[100];
 
 // variables des joueurs
@@ -94,10 +98,12 @@ int main(int argc, char* argv[]) {
     // Initialisation du sémaphore de la fin du tour de chaque joueur apres qu il aient choisi de rejouer ou non
     semFinRejoue = sem_open("/FINREJOUETOUR.SEMAPHORE", O_CREAT | O_RDWR, 0600, 0);
 
+    // Initialisation du sémaphore de la fin du tour de chaque joueur apres qu il aient choisi de rejouer ou non
+    semAffichageMain = sem_open("/AFFICHAGEMAIN.SEMAPHORE", O_CREAT | O_RDWR, 0600, 0);
+    semAffichageMainTerm = sem_open("/FINAFFICHAGEMAIN.SEMAPHORE", O_CREAT | O_RDWR, 0600, 0);
+
 
     printf("Je suis le serveur\nCréation de la partie...\n");
-    
-
 
     // attente de reception d'un message d'un client
     listeJoueurs = (listeJoueurs_t *) shmat(memConnexionID,NULL,0);
@@ -216,8 +222,8 @@ int main(int argc, char* argv[]) {
 
         // on fait afficher la propre main de chaque joueur côté joueur
         printf("Affichage des main des joueurs\n");
+        sem_post(semMain);
         for(int i = 0; i < listeJoueurs->nbJoueurs; i++) {
-            sem_post(semMain);
             printf("Affichage de la main du joueur %d : %s\n", listeJoueurs->joueurs[i].pid, listeJoueurs->joueurs[i].pseudo);
         }
 
