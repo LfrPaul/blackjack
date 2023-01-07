@@ -64,86 +64,135 @@ int uneCartePourTousJoueurs(paquetCarte_t* pCartes, listeJoueurs_t* pJoueurs){
 
 }
 
-void afficherMainJoueur(joueur_t *joueur){
-    // printf("JOUEUR %s (%d)\n", joueur->pseudo, joueur->pid);
-    if(joueur->nbCartes < NB_CARTE_EN__MAIN){
-
-        for(int i = 0; i < joueur->nbCartes; i++){
-            printf("*** Carte n°%d ***  ", i);
-        }
-        printf("\n");
-        for(int i = 0; i < joueur->nbCartes; i++){
-            if(joueur->main[i].valeur == 1)
-                printf("*%*sA%*s*", 7, " ", 7, " ");
-            else if(joueur->main[i].valeur == 11)
-                printf("*%*sJ%*s*", 7, " ", 7, " ");
-            else if(joueur->main[i].valeur == 12)
-                printf("*%*sD%*s*", 7, " ", 7, " ");
-            else if(joueur->main[i].valeur == 13)
-                printf("*%*sR%*s*", 7, " ", 7, " ");
-            else
-                printf("*%*d%*s*", 8, joueur->main[i].valeur, 7, " ");
-            
-            printf("  ");
-        }
-        printf("\n");
-        for(int i = 0; i < joueur->nbCartes; i++){
-            // printf("*%*d%*s*", 8 + strlen(), joueur->main[i].valeur, 7, " ");
-            printf("*%*s%*s*  ", (int)(8 + strlen(joueur->main[i].couleur)/2), joueur->main[i].couleur, (int)(7 - strlen(joueur->main[i].couleur)/2), " ");
-        }
-        printf("\n");
-        for(int i = 0; i < joueur->nbCartes; i++){
-            printf("*****************  ");
-        }
-        printf("\n");
+char * affichageCouleur(char couleur[10]) {
+    if(strcmp(couleur, "Coeur") == 0 || strcmp(couleur, "Carreau") == 0)
+        return RED;
+    else if(strcmp(couleur, "Trefle") == 0 || strcmp(couleur, "Pic") == 0)
+        return BLCK;
+}
+char * getSymbole(char couleur[10]) {
+    if(strcmp(couleur, "Coeur") == 0) {
+        return "♡";
     }
-    else {
-        printf("?\n");
+    else if(strcmp(couleur, "Carreau") == 0) {
+        return "◇";
+    }
+    else if(strcmp(couleur, "Trefle") == 0) {
+        return "♧";
+    } 
+    else if(strcmp(couleur, "Pic") == 0) {
+        return "♤";
+    }
+}
+char * getCarteName(int valeur) {
+    switch(valeur) {
+        case 1:
+            return "A";
+            break;
+        case 11:
+            return "J";
+            break;
+        case 12:
+            return "D";
+            break;
+        case 13:
+            return "R";
+            break;
+        default:
+            char *buf = malloc(2);
+            sprintf(buf, "%d", valeur);
+            return buf;
+            break;
     }
 }
 
-void afficherMainCroupier(croupier_t *croupier){
-    // printf("CROUPIER (%d)\n", croupier->pid);
-    if(croupier->nbCartes < NB_CARTE_EN__MAIN){
-        for(int i = 0; i < croupier->nbCartes; i++){
-            printf("*** Carte n°%d ***  ", i);
+void afficherMainJoueur(joueur_t *joueur){
+    printf("%s", BOLD);
+    if(joueur->nbCartes < NB_CARTE_EN__MAIN){
+        for(int i = 0; i < joueur->nbCartes; i++){
+            printf("%s        %s  ", WHT_BG, RESET);
         }
         printf("\n");
-        for(int i = 0; i < croupier->nbCartes; i++){
-            if(i == 0 && croupier->debutPartie == 1){
-                printf("* Carte cachée  *  ");
-            } else {
-                if(croupier->main[i].valeur == 1)
-                    printf("*%*sA%*s*", 7, " ", 7, " ");
-                else if(croupier->main[i].valeur == 11)
-                    printf("*%*sJ%*s*", 7, " ", 7, " ");
-                else if(croupier->main[i].valeur == 12)
-                    printf("*%*sD%*s*", 7, " ", 7, " ");
-                else if(croupier->main[i].valeur == 13)
-                    printf("*%*sR%*s*", 7, " ", 7, " ");
-                else
-                    printf("*%*d%*s*", 8, croupier->main[i].valeur, 7, " ");
-            
-                printf("  ");
+        for(int i = 0; i < joueur->nbCartes; i++){
+            printf("%s%s", WHT_BG, affichageCouleur(joueur->main[i].couleur));
+
+            printf(" %-*s  %s  ", 2, getCarteName(joueur->main[i].valeur), getSymbole(joueur->main[i].couleur));
+
+            printf("%s  ", RESET);
+        }
+        printf("\n");
+        for(int j = 0; j < 2; j++) {
+            for(int i = 0; i < joueur->nbCartes; i++){
+                printf("%s        %s  ", WHT_BG, RESET);
             }
+            printf("\n");
+        }
+        for(int i = 0; i < joueur->nbCartes; i++){
+            printf("%s%s", WHT_BG, affichageCouleur(joueur->main[i].couleur));
+
+            printf(" %s   %*s ", getSymbole(joueur->main[i].couleur), 2, getCarteName(joueur->main[i].valeur));
+
+            printf("%s  ", RESET);
         }
         printf("\n");
-        for(int i = 0; i < croupier->nbCartes; i++){
-            if(i == 0 && croupier->debutPartie == 1){
-                printf("*               *  ");
-            } else {
-                printf("*%*s%*s*  ", (int)(8 + strlen(croupier->main[i].couleur)/2), croupier->main[i].couleur, (int)(7 - strlen(croupier->main[i].couleur)/2), " ");
-            }
-        }
-        printf("\n");
-        for(int i = 0; i < croupier->nbCartes; i++){
-            printf("*****************  ");
+        for(int i = 0; i < joueur->nbCartes; i++){
+            printf("%s        %s  ", WHT_BG, RESET);
         }
         printf("\n");
     }
     else {
         printf("?\n");
     }
+    printf("%s", RESET_ALL);
+}
+
+void afficherMainCroupier(croupier_t *croupier){
+    printf("%s", BOLD);
+    if(croupier->nbCartes < NB_CARTE_EN__MAIN){
+        for(int i = 0; i < croupier->nbCartes; i++){
+            printf("%s        %s  ", WHT_BG, RESET);
+        }
+        printf("\n");
+        for(int i = 0; i < croupier->nbCartes; i++){
+
+            if(i == 0 && croupier->debutPartie == 1){
+                printf("%s%s", WHT_BG, BLCK);
+                printf(" ?    ? ");
+            } else {
+                printf("%s%s", WHT_BG, affichageCouleur(croupier->main[i].couleur));
+                printf(" %-*s  %s  ", 2, getCarteName(croupier->main[i].valeur), getSymbole(croupier->main[i].couleur));
+            }
+
+            printf("%s  ", RESET);
+        }
+        printf("\n");
+        for(int j = 0; j < 2; j++) {
+            for(int i = 0; i < croupier->nbCartes; i++){
+                printf("%s        %s  ", WHT_BG, RESET);
+            }
+            printf("\n");
+        }
+        for(int i = 0; i < croupier->nbCartes; i++){
+            if(i == 0 && croupier->debutPartie == 1){
+                printf("%s%s", WHT_BG, BLCK);
+                printf(" ?    ? ");
+            } else {
+                printf("%s%s", WHT_BG, affichageCouleur(croupier->main[i].couleur));
+                printf(" %s   %*s ", getSymbole(croupier->main[i].couleur), 2, getCarteName(croupier->main[i].valeur));
+            }
+
+            printf("%s  ", RESET);
+        }
+        printf("\n");
+        for(int i = 0; i < croupier->nbCartes; i++){
+            printf("%s        %s  ", WHT_BG, RESET);
+        }
+        printf("\n");
+    }
+    else {
+        printf("?\n");
+    }
+    printf("%s", RESET_ALL);
 }
 
 void printTable(croupier_t *croupier, listeJoueurs_t* listeJoueurs, int indexJoueur) {

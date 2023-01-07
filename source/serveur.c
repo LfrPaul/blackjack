@@ -26,6 +26,7 @@ sem_t *semMain;
 sem_t *semAffiche;
 sem_t *semFinTour;
 sem_t *semFinRejoue;
+sem_t *semFinPartie;
 
 // sémaphores utilisés dans le thread d'affichage
 sem_t *semAffichageMain;
@@ -97,6 +98,9 @@ int main(int argc, char* argv[]) {
 
     // Initialisation du sémaphore de la fin du tour de chaque joueur apres qu il aient choisi de rejouer ou non
     semFinRejoue = sem_open("/FINREJOUETOUR.SEMAPHORE", O_CREAT | O_RDWR, 0600, 0);
+
+    // Initialisation du sémaphore de la fin de la partie
+    semFinPartie = sem_open("/FINPARTIE.SEMAPHORE", O_CREAT | O_RDWR, 0600, 0);
 
     // Initialisation du sémaphore de la fin du tour de chaque joueur apres qu il aient choisi de rejouer ou non
     semAffichageMain = sem_open("/AFFICHAGEMAIN.SEMAPHORE", O_CREAT | O_RDWR, 0600, 0);
@@ -222,8 +226,8 @@ int main(int argc, char* argv[]) {
 
         // on fait afficher la propre main de chaque joueur côté joueur
         printf("Affichage des main des joueurs\n");
-        sem_post(semMain);
         for(int i = 0; i < listeJoueurs->nbJoueurs; i++) {
+            sem_post(semMain);
             printf("Affichage de la main du joueur %d : %s\n", listeJoueurs->joueurs[i].pid, listeJoueurs->joueurs[i].pseudo);
         }
 
@@ -237,12 +241,15 @@ int main(int argc, char* argv[]) {
 
         printf("Chaque joueur joue chacun son tour \n");
         for(int i = 0; i<listeJoueurs->nbJoueurs; i++){
-            printf("C'est le tour du joueur %d\n", i);
+            printf("C'est le tour du joueur %d - %s\n", i, nomSemaJoueurs[i]);
             sem_post(semJoueur[i]);
             sem_wait(semFinTour);
             printf("Le joueur %d a fini de jouer \n", i);
         }   
 
+        for(int i = 0; i<listeJoueurs->nbJoueurs; i++){
+            sem_post(semFinPartie);
+        }   
 
         printf("Le croupier tire des cartes jusqu'à avoir un score supérieur à 17\n");
         croupierJeu->debutPartie = 0;
@@ -258,7 +265,6 @@ int main(int argc, char* argv[]) {
             printf("Le nouveau score du croupier vaut %d\n", croupierJeu->sommeCartesCroupier);
         }
 
-        afficherMainCroupier(croupierJeu);
 
         printf("\n\n******** RESULTAT ********\n");
         // on détermine les joueurs qui ont gagné 
@@ -372,10 +378,12 @@ int main(int argc, char* argv[]) {
     sem_unlink("FINTOUR.SEMAPHORE");
     sem_close(semFinRejoue);
     sem_unlink("FINREJOUETOUR.SEMAPHORE");
-
-    
-
-
+    sem_close(semFinPartie);
+    sem_unlink("FINPARTIE.SEMAPHORE");
+    sem_close(semAffichageMain);
+    sem_unlink("AFFICHAGEMAIN.SEMAPHORE");
+    sem_close(semAffichageMainTerm);
+    sem_unlink("FINAFFICHAGEMAIN.SEMAPHORE");
 
     return 0;
 }

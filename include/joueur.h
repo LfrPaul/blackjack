@@ -78,3 +78,6 @@ void uneCartePourUnePersonnne(paquetCarte_t* pCartes, carte_t * main, int* nbCar
 int getPlayerScore(carte_t main[NB_CARTE_EN__MAIN], int nbCartes);
 void printTable(croupier_t *croupier, listeJoueurs_t* pJoueurs, int indexJoueur);
 void fonctionAffichage();
+char * affichageCouleur(char couleur[10]);
+char * getSymbole(char couleur[10]);
+char * getCarteName(int valeur);
