@@ -31,6 +31,4 @@ Les instructions pour poursuivre seront indiquées dans les consoles
 
 ## Informations complémentaires
 
-L'interrumption du programme avec un CTRL-C, un signal SIGKILL, ou la fermeture du terminal n'est pas pris en compte. Cela causera donc des soucis pendant ou au relancement d'une partie.
-
 Si une partie s'arrête, les scores ne seront pas enregistrés et les joueurs repartiront de zéro au lancement d'une nouvelle partie.
