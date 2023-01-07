@@ -1,16 +1,18 @@
-all: clean bal3_s bal3_c serveur
+all: carte joueur client serveur
 
-bal3_c: bal3_c.c
-	gcc bal3_c.c -o bal3_c
+carte : source/carte.c 
+	gcc -c source/carte.c -o build/carte.o
 
-bal3_s: bal3_s.c
-	gcc bal3_s.c -o bal3_s
+joueur : source/joueur.c 
+	gcc -c source/joueur.c -o build/joueur.o
 
-serveur: serveur.c client.c
-	gcc serveur.c -o serveur
-	gcc client.c -o client
+client : source/client.c build/joueur.o build/carte.o
+	gcc source/client.c build/carte.o build/joueur.o -o client 
+
+serveur: source/serveur.c build/joueur.o build/carte.o
+	gcc source/serveur.c build/carte.o build/joueur.o -o serveur
 
 clean:
-	rm -f *.o
+	rm build/*.o client serveur
 
 	

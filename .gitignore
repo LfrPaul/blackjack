@@ -1,6 +1,4 @@
-*
-!/**/
-!*.*
-!Makefile
-!balConnexion
-!fichierftok
+*.o
+.vscode
+client
+serveur
