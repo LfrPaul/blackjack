@@ -21,10 +21,16 @@ sem_t *semAffiche;
 sem_t *semTour;
 sem_t *semFinTour;
 sem_t *semFinRejoue;
+sem_t *semFinPartie;
+
+// sémaphores utilisés dans le thread d'affichage
+sem_t *semAffichageMain;
+sem_t *semAffichageMainTerm;
 
 newPlayer_t my_infos;
 
 pid_t monPid;
+int monTour = 0;
 
 // variables des joueurs
 listeJoueurs_t *listeJoueurs;
@@ -41,6 +47,25 @@ resultatTour_t recoitResultats;
 
 char nouvTour[10];
 int premierTour;
+
+// thread qui permettra de mettre à jour l'affichage des mains
+pthread_t thAffichage;
+pthread_mutex_t mutexAffichage = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutexAffichageFin = PTHREAD_MUTEX_INITIALIZER;
+
+void fonctionAffichage() {
+    while(1) {
+        sem_wait(semAffichageMain);
+        printf("MON TOUR : %d\n", monTour);
+        if(monTour != 2) {
+            pthread_mutex_lock(&mutexAffichage);
+        }
+
+        printTable(croupierJeu, listeJoueurs, indexJoueur);
+        
+        pthread_mutex_unlock(&mutexAffichageFin);
+    }
+}
 
 int main(int argc, char* argv[]) {
 
@@ -79,6 +104,9 @@ int main(int argc, char* argv[]) {
     semAffiche = sem_open("/AFFICHE.SEMAPHORE", O_RDONLY, 0600, 0);
     semFinTour = sem_open("/FINTOUR.SEMAPHORE", O_RDWR, 0600, 0);
     semFinRejoue = sem_open("/FINREJOUETOUR.SEMAPHORE", O_RDWR, 0600, 0);
+    semAffichageMain = sem_open("/AFFICHAGEMAIN.SEMAPHORE", O_RDWR, 0600, 0);
+    semAffichageMainTerm = sem_open("/FINAFFICHAGEMAIN.SEMAPHORE", O_RDWR, 0600, 0);
+    semFinPartie = sem_open("/FINPARTIE.SEMAPHORE", O_RDWR, 0600, 0);
 
     if(balConnexionID == -1 || memConnexionID == -1 || memCroupier == -1 || memCartes == -1 || balTourID == -1 || balRejoueID == -1){
         printf("il y a eu un erreur pour créer la BAL ou la memoire partagée.\n");
@@ -114,6 +142,9 @@ int main(int argc, char* argv[]) {
     // On attend que le serveur nous envoie un message pour dire que la partie est prête
     sem_wait(semInit);
 
+
+    pthread_create(&thAffichage, NULL, (void *)fonctionAffichage, NULL);
+
     do{
         if(premierTour == 0)
             my_infos.joueur.solde = listeJoueurs->joueurs[indexJoueur].solde;
@@ -145,35 +176,19 @@ int main(int argc, char* argv[]) {
         */
 
         msgsnd(balConnexionID, &my_infos, sizeof(my_infos.joueur), 0);
-        
-        
 
-        printf("Affichage de ma main\n");
         sem_wait(semMain);
 
         indexJoueur = findPlayerIndex(monPid, listeJoueurs);
-        printf("mon index: %d\n", indexJoueur);
-        afficherMainJoueur(&(listeJoueurs->joueurs[indexJoueur]));
-        
-        // for(int i = 0; i<listeJoueurs->nbJoueurs; i++){
-        //     if(listeJoueurs->joueurs[i].pid == monPid){
-        //         printf("Je suis ce joueur dans la liste et PID = %d\n", listeJoueurs->joueurs[i].pid);
-        //         // indexJoueur = i;
-        //         afficherMainJoueur(&(listeJoueurs->joueurs[i]));
-        //     }
-        // }
-        printf("Fin de l'affichage de la main\n");
-
-        printf("Joueur nouveau %d : %s, mise : %d, solde : %d\n", listeJoueurs->joueurs[indexJoueur].pid, listeJoueurs->joueurs[indexJoueur].pseudo, listeJoueurs->joueurs[indexJoueur].mise, listeJoueurs->joueurs[indexJoueur].solde);
-
-
-
-        printf("Affichage de la main du croupier \n");
-        afficherMainCroupier(croupierJeu);
-        printf("Fin de l'affichage de la main du croupier\n");
 
         // on previent le serveur que l affichage des cartes est terminé
+        sem_post(semAffichageMain);
+        pthread_mutex_unlock(&mutexAffichage);
+
+        pthread_mutex_lock(&mutexAffichageFin);
         sem_post(semAffiche);
+
+        // création du thread
 
 
         // on attend que ca soit notre tour de jouer
@@ -183,17 +198,15 @@ int main(int argc, char* argv[]) {
         sprintf(chainePID, "%d", getpid()); // convertir le PID en chaine de caractères
         strcat(nomSem, chainePID);
         strcat(nomSem, ".SEMAPHORE");
-        printf("Je suis le JOUEUR et je dois ouvrir la sémaphore : %s\n", nomSem);
-        semTour = sem_open(nomSem, O_RDONLY, 0600, 0);
+        semTour = sem_open(nomSem, O_CREAT | O_RDONLY, 0600, 0);
 
-        printf("On a reussi a ouvrir la semaphore\n");
-
-        printf("Je suis le joueur %d et mon PID est %d, j'attend mon tour\n", indexJoueur, getpid());
         sem_wait(semTour);
+        monTour = 1;
 
         int sortir = 0;
         int score;
         do{
+            pthread_mutex_lock(&mutexAffichageFin);
             score = 0;
             char choix[1];
             score = getPlayerScore(listeJoueurs->joueurs[indexJoueur].main, listeJoueurs->joueurs[indexJoueur].nbCartes);
@@ -210,45 +223,74 @@ int main(int argc, char* argv[]) {
                 getchar();
 
                 if(strcmp(choix, "T") == 0){
-                    printf("Vous voulez tirer une nouvelle carte\n");
                     uneCartePourUnePersonnne(paquetCartes, 
                                         listeJoueurs->joueurs[indexJoueur].main, 
                                         &(listeJoueurs->joueurs[indexJoueur].nbCartes));
-                    afficherMainJoueur(&(listeJoueurs->joueurs[indexJoueur]));
+                    pthread_mutex_unlock(&mutexAffichage);
+                    for(int i = 0; i < listeJoueurs->nbJoueurs; i++){
+                        sem_post(semAffichageMain);
+                    }
+                    // afficherMainJoueur(&(listeJoueurs->joueurs[indexJoueur]));
                 }
                 else if(strcmp(choix, "R") == 0){
-                    printf("Vous restez avec vos cartes actuelles, on attend le tirage du croupier\n");
                     sortir = 1;
                 }
                 else{
                     printf("Votre saisie n'est pas correcte\n");
+                    pthread_mutex_unlock(&mutexAffichageFin);
                 }
             }
             
         }while(sortir == 0);
+        monTour = 2;
+        pthread_mutex_unlock(&mutexAffichageFin);
         listeJoueurs->joueurs[indexJoueur].sommeCartes = score;
         sem_post(semFinTour);
 
+        sem_wait(semFinPartie);
+
         printf("\n\n******** RESULTAT ********\n");
+        // printf PERDU in ascii art
+
+
         msgrcv(balTourID, &recoitResultats, sizeof(resultatTour_t), getpid(), 0);
         if(recoitResultats.gagne == 1){
-            printf("J'ai gagné !!!!!!!!!!! et mon PID = %d\n", getpid());
-            printf("J'ai récu un gain de : %d \n", recoitResultats.gain);
-            printf("Ancien solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
+            printf("%s ██████╗  █████╗  ██████╗ ███╗   ██╗███████╗\n", GRN);
+            printf("██╔════╝ ██╔══██╗██╔════╝ ████╗  ██║██╔════╝\n");
+            printf("██║  ███╗███████║██║  ███╗██╔██╗ ██║█████╗  \n");
+            printf("██║   ██║██╔══██║██║   ██║██║╚██╗██║██╔══╝  \n");
+            printf("╚██████╔╝██║  ██║╚██████╔╝██║ ╚████║███████╗\n");
+            printf(" ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝\n");
+            printf("Vous avez gagné\n");
+            printf("Vous recevez : %d jetons\n", recoitResultats.gain);
+            printf("Votre ancien solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
             listeJoueurs->joueurs[indexJoueur].solde = listeJoueurs->joueurs[indexJoueur].solde + recoitResultats.gain;
-            printf("Mon nouveau solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
+            printf("Votre nouveau solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
         }
         if(recoitResultats.gagne == 2){
-            printf("J'ai fait égalité ! et mon PID = %d\n", getpid());
-            printf("J'ai récu un gain de : %d \n", recoitResultats.gain);
-            printf("Ancien solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
+            printf("%s███████╗ ██████╗  █████╗ ██╗     ██╗████████╗███████╗\n", YEL);
+            printf("██╔════╝██╔════╝ ██╔══██╗██║     ██║╚══██╔══╝██╔════╝\n");
+            printf("█████╗  ██║  ███╗███████║██║     ██║   ██║   █████╗  \n");
+            printf("██╔══╝  ██║   ██║██╔══██║██║     ██║   ██║   ██╔══╝  \n");
+            printf("███████╗╚██████╔╝██║  ██║███████╗██║   ██║   ███████╗\n");
+            printf("╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝   ╚═╝   ╚══════╝\n");
+            printf("Vous avez fait égalité\n");
+            printf("Vous recevez : %d jetons\n", recoitResultats.gain);
+            printf("Votre ancien solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
             listeJoueurs->joueurs[indexJoueur].solde = listeJoueurs->joueurs[indexJoueur].solde + recoitResultats.gain;
-            printf("Mon nouveau solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
+            printf("Votre nouveau solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
         }
         if(recoitResultats.gagne == 0){
-            printf("J'ai perdu et mon PID = %d\n", getpid());
-            printf("Mon solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
+            printf("%s██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗\n", RED);
+            printf("██╔══██╗██╔════╝██╔══██╗██╔══██╗██║   ██║\n");
+            printf("██████╔╝█████╗  ██████╔╝██║  ██║██║   ██║\n");
+            printf("██╔═══╝ ██╔══╝  ██╔══██╗██║  ██║██║   ██║\n");
+            printf("██║     ███████╗██║  ██║██████╔╝╚██████╔╝\n");
+            printf("╚═╝     ╚══════╝╚═╝  ╚═╝╚═════╝  ╚═════╝ \n");
+            printf("Vous avez perdu\n");
+            printf("Votre solde est de %d\n", listeJoueurs->joueurs[indexJoueur].solde);
         }
+        printf("%s", RESET);
         printf("La main finale du croupier est :\n");
         afficherMainCroupier(croupierJeu);
         printf("Le total de la main du croupier est : %d\n", croupierJeu->sommeCartesCroupier);
