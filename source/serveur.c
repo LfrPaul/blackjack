@@ -48,7 +48,15 @@ croupier_t *croupierJeu;
 // structure d envoie dans la BAL pour les resultat de tour 
 resultatTour_t envoieResultats;
 
+#define CHECK(sts,msg) if ((sts) == -1 )  { perror(msg);_exit(-1);}
+
 int main(int argc, char* argv[]) {
+
+    // on bloque le CTRL + C
+    sigset_t masque;
+    CHECK(sigemptyset(&masque), "Problème lors de sigemptyset");
+    CHECK(sigaddset(&masque, SIGINT), "Problème lors de sigaddset");
+    sigprocmask(SIG_SETMASK, &masque, NULL);
 
     // Tokens pour la BAL et les mémoire partagées (depuis le répertoire BlackJack)
     keyConnexion = ftok("token/balConnexion", 28); // création de la clé de la BAL

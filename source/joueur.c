@@ -46,7 +46,6 @@ int uneCartePourTousJoueurs(paquetCarte_t* pCartes, listeJoueurs_t* pJoueurs){
                     printf("on affecte une carte a un joueur\n");
                     int carteEnMain = pJoueurs->joueurs[draw].nbCartes;
                     memcpy(&(pJoueurs->joueurs[draw].main[carteEnMain]), &(pCartes->tabCartes[i]), sizeof(carte_t));
-                    //pJoueurs->joueurs[draw].main[0] = &(segmentListeJoueurs->tabJoueurs[indexJoueur]);
                     pJoueurs->joueurs[draw].nbCartes++;
                     pCartes->tabCartes[i].dansPioche = 0;
                     nbCartesDispo--;

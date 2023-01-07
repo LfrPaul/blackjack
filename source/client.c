@@ -53,6 +53,8 @@ pthread_t thAffichage;
 pthread_mutex_t mutexAffichage = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutexAffichageFin = PTHREAD_MUTEX_INITIALIZER;
 
+#define CHECK(sts,msg) if ((sts) == -1 )  { perror(msg);_exit(-1);}
+
 void fonctionAffichage() {
     while(1) {
         sem_wait(semAffichageMain);
@@ -68,6 +70,12 @@ void fonctionAffichage() {
 }
 
 int main(int argc, char* argv[]) {
+
+    // on bloque le CTRL + C
+    sigset_t masque;
+    CHECK(sigemptyset(&masque), "Problème lors de sigemptyset");
+    CHECK(sigaddset(&masque, SIGINT), "Problème lors de sigaddset");
+    sigprocmask(SIG_SETMASK, &masque, NULL);
 
     premierTour = 1;
     keyConnexion = ftok("token/balConnexion", 28); // création de la clé
