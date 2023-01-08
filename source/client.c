@@ -53,6 +53,9 @@ pthread_t thAffichage;
 pthread_mutex_t mutexAffichage = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutexAffichageFin = PTHREAD_MUTEX_INITIALIZER;
 
+//pseudo saisie
+char pseudoFixe[100];
+
 #define CHECK(sts,msg) if ((sts) == -1 )  { perror(msg);_exit(-1);}
 
 void fonctionAffichage() {
@@ -141,6 +144,9 @@ int main(int argc, char* argv[]) {
     printf("Saisissez votre pseudo :");
     scanf("%[^\n]s", my_infos.joueur.pseudo);
 
+    // on fixe le pseudo
+    strcpy(pseudoFixe, my_infos.joueur.pseudo);
+
     getchar();
 
     printf("Client:  Pid:%d, Nom:%s\n", my_infos.joueur.pid, my_infos.joueur.pseudo);
@@ -154,8 +160,12 @@ int main(int argc, char* argv[]) {
     pthread_create(&thAffichage, NULL, (void *)fonctionAffichage, NULL);
 
     do{
-        if(premierTour == 0)
+        if(premierTour == 0){
+            indexJoueur = findPlayerIndex(monPid, listeJoueurs);
             my_infos.joueur.solde = listeJoueurs->joueurs[indexJoueur].solde;
+            listeJoueurs->joueurs[indexJoueur].nbCartes = 0;
+        }
+            
 
         printf("Solde: %d \n", my_infos.joueur.solde);
 
@@ -338,7 +348,7 @@ int main(int argc, char* argv[]) {
 
     }while(strcmp(nouvTour, "O") == 0);
 
-    printf("Client : %s quitte la partie\n", listeJoueurs->joueurs[indexJoueur].pseudo);
+    printf("Client : %s quitte la partie\n", pseudoFixe);
 
 
     return 0;
